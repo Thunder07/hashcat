@@ -42,6 +42,9 @@ u8 bf64_to_int      (const u8 c);
 u8 int_to_lotus64   (const u8 c);
 u8 lotus64_to_int   (const u8 c);
 
+u8 ps4_base64_to_int (const u8 c);
+u8 ps4_int_to_base64 (const u8 c);
+
 int base32_decode (u8 (*f) (const u8), const u8 *in_buf, int in_len, u8 *out_buf);
 int base32_encode (u8 (*f) (const u8), const u8 *in_buf, int in_len, u8 *out_buf);
 

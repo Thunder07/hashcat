@@ -513,6 +513,8 @@ static const char *HT_16300 = "Ethereum Pre-Sale Wallet, PBKDF2-HMAC-SHA256";
 static const char *HT_16400 = "CRAM-MD5 Dovecot";
 static const char *HT_16500 = "JWT (JSON Web Token)";
 static const char *HT_16600 = "Electrum Wallet (Salt-Type 1-3)";
+static const char *HT_16110 = "PS3 Function NIDs";
+static const char *HT_16111 = "PS4 Function NIDs";
 static const char *HT_99999 = "Plaintext";
 
 static const char *HT_00011 = "Joomla < 2.5.18";
@@ -666,6 +668,62 @@ static const char *SIGNATURE_ELECTRUM_WALLET    = "$electrum$";
 /**
  * decoder / encoder
  */
+
+static void ps4_decode_hash (const u8 *in, u8* out_buf)
+{
+  u8 out_val0 = ps4_base64_to_int(in[10] & 0x7f);
+  u8 out_val1 = ps4_base64_to_int(in[ 9] & 0x7f);
+  u8 out_val2 = ps4_base64_to_int(in[ 8] & 0x7f);
+  u8 out_val3 = 0;
+
+  out_buf[3] = ((out_val1 << 4) & 0xf0) | ((out_val0 >> 2) & 0x0f);
+  out_buf[2] = ((out_val2 << 2) & 0xfc) | ((out_val1 >> 4) & 0x03);
+
+  out_val0 = ps4_base64_to_int(in[ 7] & 0x7f);
+  out_val1 = ps4_base64_to_int(in[ 6] & 0x7f);
+  out_val2 = ps4_base64_to_int(in[ 5] & 0x7f);
+  out_val3 = ps4_base64_to_int(in[ 4] & 0x7f);
+
+  out_buf[1] = ((out_val1 << 6) & 0xc0) | ((out_val0 >> 0) & 0x3f);
+  out_buf[0] = ((out_val2 << 4) & 0xf0) | ((out_val1 >> 2) & 0x0f);
+  out_buf[7] = ((out_val3 << 2) & 0xfc) | ((out_val2 >> 4) & 0x03);
+
+  out_val0 = ps4_base64_to_int(in[ 3] & 0x7f);
+  out_val1 = ps4_base64_to_int(in[ 2] & 0x7f);
+  out_val2 = ps4_base64_to_int(in[ 1] & 0x7f);
+  out_val3 = ps4_base64_to_int(in[ 0] & 0x7f);
+
+  out_buf[6] = ((out_val1 << 6) & 0xc0) | ((out_val0 >> 0) & 0x3f);
+  out_buf[5] = ((out_val2 << 4) & 0xf0) | ((out_val1 >> 2) & 0x0f);
+  out_buf[4] = ((out_val3 << 2) & 0xfc) | ((out_val2 >> 4) & 0x03);
+}
+
+static void ps4_encode_hash (const u8 *in, u8* out_buf)
+{
+  const u8 out_val0  = ps4_int_to_base64 (                        ((in[0] & 0xf) * 4  ));
+  const u8 out_val1  = ps4_int_to_base64 (((in[1] << 4) & 0x30) | ((in[0] >> 4) & 0x0f));
+  const u8 out_val2  = ps4_int_to_base64 (                        ((in[1] >> 2) & 0x3f));
+  const u8 out_val3  = ps4_int_to_base64 (                        ((in[2] >> 0) & 0x3f));
+  const u8 out_val4  = ps4_int_to_base64 (((in[3] << 2) & 0x3c) | ((in[2] >> 6) & 0x03));
+  const u8 out_val5  = ps4_int_to_base64 (((in[4] << 4) & 0x30) | ((in[3] >> 4) & 0x0f));
+  const u8 out_val6  = ps4_int_to_base64 (                        ((in[4] >> 2) & 0x3f));
+  const u8 out_val7  = ps4_int_to_base64 (                        ((in[5] >> 0) & 0x3f));
+  const u8 out_val8  = ps4_int_to_base64 (((in[6] << 2) & 0x3c) | ((in[5] >> 6) & 0x03));
+  const u8 out_val9  = ps4_int_to_base64 (((in[7] << 4) & 0x30) | ((in[6] >> 4) & 0x0f));
+  const u8 out_val10 = ps4_int_to_base64 (                        ((in[7] >> 2) & 0x3f));
+
+  out_buf[ 0] = out_val10 & 0x7f;
+  out_buf[ 1] = out_val9  & 0x7f;
+  out_buf[ 2] = out_val8  & 0x7f;
+  out_buf[ 3] = out_val7  & 0x7f;
+  out_buf[ 4] = out_val6  & 0x7f;
+  out_buf[ 5] = out_val5  & 0x7f;
+  out_buf[ 6] = out_val4  & 0x7f;
+  out_buf[ 7] = out_val3  & 0x7f;
+  out_buf[ 8] = out_val2  & 0x7f;
+  out_buf[ 9] = out_val1  & 0x7f;
+  out_buf[10] = out_val0 & 0x7f;
+}
 
 static void juniper_decrypt_hash (u8 *in, u8 *out)
 {
@@ -15322,6 +15380,81 @@ int netbsd_sha1crypt_parse_hash (u8 *input_buf, u32 input_len, hash_t *hash_buf,
   return (PARSER_OK);
 }
 
+int ps3_nid_parse_hash (u8 *input_buf, u32 input_len, hash_t *hash_buf, MAYBE_UNUSED hashconfig_t *hashconfig) 
+{
+  if ((input_len < DISPLAY_LEN_MIN_16110) || (input_len > DISPLAY_LEN_MAX_16110)) return (PARSER_GLOBAL_LENGTH);
+
+  u32 *digest = (u32 *) hash_buf->digest;
+
+  salt_t *salt = hash_buf->salt;
+
+  if (is_valid_hex_string (input_buf, 8) == false) return (PARSER_HASH_ENCODING);
+
+  digest[0] = hex_to_u32 ((const u8 *) &input_buf[ 0]);
+  digest[1] = 0;
+  digest[2] = 0;
+  digest[3] = 0;
+  digest[4] = 0;
+  
+  if (hashconfig->opti_type & OPTI_TYPE_PRECOMPUTE_MERKLE)
+  {
+    digest[0] -= SHA1M_A;
+    digest[1] -= SHA1M_B;
+    digest[2] -= SHA1M_C;
+    digest[3] -= SHA1M_D;
+    digest[4] -= SHA1M_E;
+  }
+
+  u32 salt_len = 32;
+
+  u8 salt_buf[32] = "6759659904250490566427499489741A";
+
+  u8 *salt_buf_ptr = (u8 *) salt->salt_buf;
+
+  salt_len = parse_and_store_salt (salt_buf_ptr, salt_buf, salt_len, hashconfig);
+
+  if (salt_len != 16) return (PARSER_SALT_LENGTH);
+
+  salt->salt_len = salt_len;
+
+  return (PARSER_OK);
+}
+
+int ps4_nid_parse_hash (u8 *input_buf, u32 input_len, hash_t *hash_buf, MAYBE_UNUSED hashconfig_t *hashconfig) 
+{
+  if ((input_len < DISPLAY_LEN_MIN_16111) || (input_len > DISPLAY_LEN_MAX_16111)) return (PARSER_GLOBAL_LENGTH);
+
+  u32 *digest = (u32 *) hash_buf->digest;
+
+  salt_t *salt = hash_buf->salt;
+
+  u8 decoded[8];
+
+  ps4_decode_hash(input_buf, decoded);
+
+  memcpy(digest, decoded, 8);
+  digest[2] = 0;
+  digest[3] = 0;
+  digest[4] = 0;
+  
+  digest[0] -= SHA1M_A;
+  digest[1] -= SHA1M_B;
+
+  u32 salt_len = 32;
+
+  u8 salt_buf[32] = "518D64A635DED8C1E6B039B1C3E55230";
+
+  u8 *salt_buf_ptr = (u8 *) salt->salt_buf;
+
+  salt_len = parse_and_store_salt (salt_buf_ptr, salt_buf, salt_len, hashconfig);
+
+  if (salt_len != 16) return (PARSER_SALT_LENGTH);
+
+  salt->salt_len = salt_len;
+
+  return (PARSER_OK);
+}
+
 int atlassian_parse_hash (u8 *input_buf, u32 input_len, hash_t *hash_buf, MAYBE_UNUSED hashconfig_t *hashconfig)
 {
   if ((input_len < DISPLAY_LEN_MIN_12001) || (input_len > DISPLAY_LEN_MAX_12001)) return (PARSER_GLOBAL_LENGTH);
@@ -16904,6 +17037,8 @@ const char *strhashtype (const u32 hash_mode)
     case 16400: return HT_16400;
     case 16500: return HT_16500;
     case 16600: return HT_16600;
+    case 16110: return HT_16110;
+    case 16111: return HT_16111;
     case 99999: return HT_99999;
   }
 
@@ -20018,6 +20153,10 @@ int ascii_digest (hashcat_ctx_t *hashcat_ctx, char *out_buf, const size_t out_le
 
     snprintf (out_buf, out_len - 1, "%s", hash_buf);
   }
+  else if (hash_mode == 16110)
+  {
+    snprintf(out_buf, out_len -1, "%08x", byte_swap_32(digest_buf[0]));
+  }
   else if (hash_mode == 15300)
   {
     dpapimk_t *dpapimks = (dpapimk_t *) esalts_buf;
@@ -20500,6 +20639,17 @@ int ascii_digest (hashcat_ctx_t *hashcat_ctx, char *out_buf, const size_t out_le
       byte_swap_32 (electrum_wallet->encrypted[1]),
       byte_swap_32 (electrum_wallet->encrypted[2]),
       byte_swap_32 (electrum_wallet->encrypted[3]));
+  }
+  else if (hash_mode == 16111)
+  {
+    u32 bswapped[2];
+    bswapped[0] = byte_swap_32(digest_buf[0]);
+    bswapped[1] = byte_swap_32(digest_buf[1]);
+
+    u8 encoded[11];
+
+    ps4_encode_hash((u8*)bswapped, encoded);
+    snprintf(out_buf, 11, "%s", (char*)encoded);
   }
   else if (hash_mode == 99999)
   {
@@ -25480,6 +25630,29 @@ int hashconfig_init (hashcat_ctx_t *hashcat_ctx)
                  hashconfig->st_pass        = ST_PASS_HASHCAT_PLAIN;
                  break;
 
+    case 16110:  hashconfig->hash_type      = HASH_TYPE_SHA1;
+                 hashconfig->salt_type      = SALT_TYPE_EMBEDDED;
+                 hashconfig->attack_exec    = ATTACK_EXEC_INSIDE_KERNEL;
+                 hashconfig->opts_type      = OPTS_TYPE_PT_GENERATE_BE
+                                            | OPTS_TYPE_ST_ADD80
+                                            | OPTS_TYPE_ST_ADDBITS15
+                                            | OPTS_TYPE_ST_HEX;
+                 hashconfig->kern_type      = KERN_TYPE_PS3_NID;
+                 hashconfig->dgst_size      = DGST_SIZE_4_5;
+                 hashconfig->parse_func     = ps3_nid_parse_hash;
+                 hashconfig->opti_type      = OPTI_TYPE_ZERO_BYTE
+                                            | OPTI_TYPE_PRECOMPUTE_INIT
+                                            | OPTI_TYPE_PRECOMPUTE_MERKLE
+                                            | OPTI_TYPE_EARLY_SKIP
+                                            | OPTI_TYPE_NOT_ITERATED
+                                            | OPTI_TYPE_APPENDED_SALT
+                                            | OPTI_TYPE_RAW_HASH;
+                 hashconfig->dgst_pos0      = 0;
+                 hashconfig->dgst_pos1      = 1;
+                 hashconfig->dgst_pos2      = 2;
+                 hashconfig->dgst_pos3      = 3;
+                 break;
+
     case 16200:  hashconfig->hash_type      = HASH_TYPE_APPLE_SECURE_NOTES;
                  hashconfig->salt_type      = SALT_TYPE_EMBEDDED;
                  hashconfig->attack_exec    = ATTACK_EXEC_OUTSIDE_KERNEL;
@@ -25571,6 +25744,29 @@ int hashconfig_init (hashcat_ctx_t *hashcat_ctx)
                  hashconfig->dgst_pos3      = 3;
                  hashconfig->st_hash        = ST_HASH_16600;
                  hashconfig->st_pass        = ST_PASS_HASHCAT_PLAIN;
+                 break;
+
+    case 16111:  hashconfig->hash_type      = HASH_TYPE_SHA1;
+                 hashconfig->salt_type      = SALT_TYPE_EMBEDDED;
+                 hashconfig->attack_exec    = ATTACK_EXEC_INSIDE_KERNEL;
+                 hashconfig->opts_type      = OPTS_TYPE_PT_GENERATE_BE
+                                            | OPTS_TYPE_ST_ADD80
+                                            | OPTS_TYPE_ST_ADDBITS15
+                                            | OPTS_TYPE_ST_HEX;
+                 hashconfig->kern_type      = KERN_TYPE_PS4_NID;
+                 hashconfig->dgst_size      = DGST_SIZE_4_5;
+                 hashconfig->parse_func     = ps4_nid_parse_hash;
+                 hashconfig->opti_type      = OPTI_TYPE_ZERO_BYTE
+                                            | OPTI_TYPE_PRECOMPUTE_INIT
+                                            | OPTI_TYPE_PRECOMPUTE_MERKLE
+                                            | OPTI_TYPE_EARLY_SKIP
+                                            | OPTI_TYPE_NOT_ITERATED
+                                            | OPTI_TYPE_APPENDED_SALT
+                                            | OPTI_TYPE_RAW_HASH;
+                 hashconfig->dgst_pos0      = 0;
+                 hashconfig->dgst_pos1      = 1;
+                 hashconfig->dgst_pos2      = 2;
+                 hashconfig->dgst_pos3      = 3;
                  break;
 
     case 99999:  hashconfig->hash_type      = HASH_TYPE_PLAINTEXT;
