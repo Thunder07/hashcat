@@ -25762,7 +25762,8 @@ int hashconfig_init (hashcat_ctx_t *hashcat_ctx)
                                             | OPTI_TYPE_EARLY_SKIP
                                             | OPTI_TYPE_NOT_ITERATED
                                             | OPTI_TYPE_APPENDED_SALT
-                                            | OPTI_TYPE_RAW_HASH;
+                                            | OPTI_TYPE_RAW_HASH
+                                            | OPTI_TYPE_OPTIMIZED_KERNEL;
                  hashconfig->dgst_pos0      = 0;
                  hashconfig->dgst_pos1      = 1;
                  hashconfig->dgst_pos2      = 2;

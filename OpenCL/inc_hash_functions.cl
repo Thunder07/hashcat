@@ -164,6 +164,19 @@
   b  = rotl32 (b, 30u);             \
 }
 
+#define SHA1_STEP_PE(f,a,b,c,d,e,x) \
+{                                   \
+  e += x;                           \
+  e += f (b, c, d);                 \
+  e += rotl32 (a,  5u);             \
+}
+
+#define SHA1_STEP_PB(f,a,b,c,d,e,x) \
+{                                   \
+  e += K;                           \
+  b  = rotl32 (b, 30u);             \
+}
+
 #define SHIFT_RIGHT_32(x,n) ((x) >> (n))
 
 #define SHA256_S0_S(x) (rotl32_S ((x), 25u) ^ rotl32_S ((x), 14u) ^ SHIFT_RIGHT_32 ((x),  3u))
