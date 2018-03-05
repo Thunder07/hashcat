@@ -13,6 +13,7 @@
 #include "usage.h"
 #include "outfile.h"
 #include "user_options.h"
+#include "boinc_api.h"
 
 static const char short_options[] = "hVvm:a:r:j:k:g:o:t:d:D:n:u:c:p:s:l:1:2:3:4:iIbw:";
 
@@ -318,7 +319,17 @@ int user_options_getopt (hashcat_ctx_t *hashcat_ctx, int argc, char **argv)
       case IDX_REMOVE_TIMER:              user_options->remove_timer              = atoi (optarg);
                                           user_options->remove_timer_chgd         = true;           break;
       case IDX_POTFILE_DISABLE:           user_options->potfile_disable           = true;           break;
-      case IDX_POTFILE_PATH:              user_options->potfile_path              = optarg;         break;
+      case IDX_POTFILE_PATH:
+        {
+          static char* tmp = 0;
+          if(tmp == 0)
+          {
+            tmp = (char*)malloc(255);
+            boinc_resolve_filename(optarg, tmp, 255);
+            user_options->potfile_path = tmp;
+          }
+        }
+      break;
       case IDX_DEBUG_MODE:                user_options->debug_mode                = atoi (optarg);  break;
       case IDX_DEBUG_FILE:                user_options->debug_file                = optarg;         break;
       case IDX_ENCODING_FROM:             user_options->encoding_from             = optarg;         break;

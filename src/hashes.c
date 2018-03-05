@@ -25,6 +25,7 @@
 #include "thread.h"
 #include "timer.h"
 #include "locking.h"
+#include "boinc_api.h"
 
 int sort_by_digest_p0p1 (const void *v1, const void *v2, void *v3)
 {
@@ -440,6 +441,15 @@ int hashes_init_stage1 (hashcat_ctx_t *hashcat_ctx)
   user_options_t       *user_options       = hashcat_ctx->user_options;
   user_options_extra_t *user_options_extra = hashcat_ctx->user_options_extra;
 
+  {
+    static char* tmp = 0;
+    if(tmp == 0)
+    {
+      tmp = (char*)malloc(255);
+      boinc_resolve_filename(user_options_extra->hc_hash, tmp, 255);
+      user_options_extra->hc_hash = tmp;
+    }
+  }
   char *hash_or_file = user_options_extra->hc_hash;
 
   /**

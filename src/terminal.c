@@ -18,6 +18,7 @@
 #include "outfile.h"
 #include "terminal.h"
 #include "hashcat.h"
+#include "boinc_api.h"
 
 static const size_t TERMINAL_LINE_LENGTH = 79;
 
@@ -1038,12 +1039,12 @@ void status_display (hashcat_ctx_t *hashcat_ctx)
   switch (hashcat_status->progress_mode)
   {
     case PROGRESS_MODE_KEYSPACE_KNOWN:
-
       event_log_info (hashcat_ctx,
         "Progress.........: %" PRIu64 "/%" PRIu64 " (%.02f%%)",
         hashcat_status->progress_cur_relative_skip,
         hashcat_status->progress_end_relative_skip,
         hashcat_status->progress_finished_percent);
+        boinc_fraction_done(hashcat_status->progress_finished_percent/100);
 
       event_log_info (hashcat_ctx,
         "Rejected.........: %" PRIu64 "/%" PRIu64 " (%.02f%%)",

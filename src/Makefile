@@ -129,7 +129,7 @@ VERSION_TAG             := $(shell test -d .git && git describe --tags --dirty=+
 ## General compiler and linker options
 ##
 
-CFLAGS                  += -pipe -std=gnu99 -Iinclude/ -Iinclude/lzma_sdk/ -IOpenCL/
+CFLAGS                  += -pipe -std=gnu99 -Iinclude/ -Iinclude/lzma_sdk/ -I. -I../boinc/api -I../boinc/lib
 
 ifeq ($(PRODUCTION),0)
 CFLAGS                  += -W
@@ -231,7 +231,7 @@ CFLAGS_NATIVE           += -DWITH_HWMON
 LFLAGS_NATIVE           := $(LFLAGS)
 LFLAGS_NATIVE           += -Wl,--dynamicbase -Wl,--nxcompat
 LFLAGS_NATIVE           += -lpsapi
-LFLAGS_NATIVE           += -liconv
+LFLAGS_NATIVE           += -liconv -L../boinc/lib -lboinc_api -lboinc -lstdc++ -static-libgcc
 endif # MSYS2
 
 ##

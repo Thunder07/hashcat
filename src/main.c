@@ -19,6 +19,7 @@
 #include "status.h"
 #include "interface.h"
 #include "event.h"
+#include "boinc_api.h"
 
 #if defined (__MINGW64__) || defined (__MINGW32__)
 int _dowildcard = -1;
@@ -939,6 +940,17 @@ static void event (const u32 id, hashcat_ctx_t *hashcat_ctx, const void *buf, co
 int main (int argc, char **argv)
 {
   // this increases the size on windows dox boxes
+  BOINC_OPTIONS options;
+
+  options.main_program = 1;
+  options.check_heartbeat = 1;
+  options.handle_process_control = 1;
+  options.send_status_msgs = 1;
+  options.direct_process_action = 1;
+  options.multi_thread = 0;
+  options.multi_process = 0;
+  options.normal_thread_priority = true;
+  boinc_init_options(&options);
 
   setup_console ();
 
@@ -1023,7 +1035,9 @@ int main (int argc, char **argv)
 
       opencl_info_compact (hashcat_ctx);
 
+      boinc_begin_critical_section();
       rc_final = hashcat_session_execute (hashcat_ctx);
+      boinc_end_critical_section();
     }
   }
 
@@ -1041,5 +1055,13 @@ int main (int argc, char **argv)
 
   free (hashcat_ctx);
 
+  if(rc_final == 1 || rc_final == 0)
+  {
+    boinc_finish(0);
+  }
+  else
+  {
+    boinc_finish(rc_final);
+  }
   return rc_final;
 }

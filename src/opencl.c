@@ -113,14 +113,14 @@ static void generate_source_kernel_filename (const u32 attack_exec, const u32 at
   if (attack_exec == ATTACK_EXEC_INSIDE_KERNEL)
   {
     if (attack_kern == ATTACK_KERN_STRAIGHT)
-      snprintf (source_file, 255, "%s/OpenCL/m%05d_a0.cl", shared_dir, (int) kern_type);
+      snprintf (source_file, 255, "%s/m%05d_a0.cl", shared_dir, (int) kern_type);
     else if (attack_kern == ATTACK_KERN_COMBI)
-      snprintf (source_file, 255, "%s/OpenCL/m%05d_a1.cl", shared_dir, (int) kern_type);
+      snprintf (source_file, 255, "%s/m%05d_a1.cl", shared_dir, (int) kern_type);
     else if (attack_kern == ATTACK_KERN_BF)
-      snprintf (source_file, 255, "%s/OpenCL/m%05d_a3.cl", shared_dir, (int) kern_type);
+      snprintf (source_file, 255, "%s/m%05d_a3.cl", shared_dir, (int) kern_type);
   }
   else
-    snprintf (source_file, 255, "%s/OpenCL/m%05d.cl", shared_dir, (int) kern_type);
+    snprintf (source_file, 255, "%s/m%05d.cl", shared_dir, (int) kern_type);
 }
 
 static void generate_cached_kernel_filename (const u32 attack_exec, const u32 attack_kern, const u32 kern_type, char *profile_dir, const char *device_name_chksum, char *cached_file)
@@ -144,11 +144,11 @@ static void generate_source_kernel_mp_filename (const u32 opti_type, const u64 o
 {
   if ((opti_type & OPTI_TYPE_BRUTE_FORCE) && (opts_type & OPTS_TYPE_PT_GENERATE_BE))
   {
-    snprintf (source_file, 255, "%s/OpenCL/markov_be.cl", shared_dir);
+    snprintf (source_file, 255, "%s/markov_be.cl", shared_dir);
   }
   else
   {
-    snprintf (source_file, 255, "%s/OpenCL/markov_le.cl", shared_dir);
+    snprintf (source_file, 255, "%s/markov_le.cl", shared_dir);
   }
 }
 
@@ -166,7 +166,7 @@ static void generate_cached_kernel_mp_filename (const u32 opti_type, const u64 o
 
 static void generate_source_kernel_amp_filename (const u32 attack_kern, char *shared_dir, char *source_file)
 {
-  snprintf (source_file, 255, "%s/OpenCL/amp_a%u.cl", shared_dir, attack_kern);
+  snprintf (source_file, 255, "%s/amp_a%u.cl", shared_dir, attack_kern);
 }
 
 static void generate_cached_kernel_amp_filename (const u32 attack_kern, char *profile_dir, const char *device_name_chksum, char *cached_file)
